@@ -3,6 +3,7 @@ load(url(githubURL))
 
 library(tidyverse)
 
+## Staff Survey
 staffsurveys <- bind_rows(staffFairdale,staffGlenwood,staffRenaissance) |> 
   select(-Name) |> 
   rowid_to_column()
@@ -101,6 +102,17 @@ staffsurveysfactored <- staffsurveys |>
   select(`How often do you see students helping each other without being prompted?`:
            `Overall, how supportive is the working environment at your school?`)
 
+
+## Creating a codebook
+library(codebookr)
+study_codebook <- codebookr::codebook(staffsurveysfactored)
+print(study_codebook, "basic_staff_codebook.docx")
+
+study_codebook <- codebookr::codebook(studentsurveyFairdale |> 
+                                        select(rowid,`How often do you track your academic progress and figure out where you can do better in: - Your Crew?`:race2))
+print(study_codebook, "basic_student_codebook.docx")
+
+## Looking at Cronbach's alpha of staff survey
 library(psych)
 
 M<- cor(staffsurveysfactored |> 
@@ -109,3 +121,13 @@ M<- cor(staffsurveysfactored |>
           mutate_if(is.factor,as.numeric))
 psych::alpha(`Sense of Belonging` |> 
                mutate_if(is.factor,as.numeric))
+#raw alpha .91
+psych::alpha(`Educating all students` |> 
+               mutate_if(is.factor,as.numeric))
+#raw alpha .79
+psych::alpha(`SEL in Classroom` |> 
+               mutate_if(is.factor,as.numeric))
+#raw alpha .79
+psych::alpha(`School Climate` |> 
+               mutate_if(is.factor,as.numeric))
+#raw alpha .74
