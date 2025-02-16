@@ -846,3 +846,231 @@ psych::alpha(School|>
 # ******************************************************************************
 #### ******************************EFA Student Survey***************************
 # ******************************************************************************
+
+New_Crew <- fullstudent[, c('TrackAcad_Crew', 
+                        'Lead_Crew', 
+                        'NeedHelpAcad_CrewTeach', 
+                        'ResolveDisagree_Crew', 
+                        'IdentityConvo_Crew', 
+                        'ComfortIdentity_Crew', 
+                        'HonestThought_Crew', 
+                        'FeelAccept_Crew',
+                        'HelpPersonal_CrewTeach')]
+
+New_MostClass <- fullstudent[, c('TrackAcad_MostClass',
+                             'Lead_MostClass',
+                             'NeedHelpAcad_MostClassmate',
+                             'NeedHelpAcad_MostTeach',
+                             'ResolveDisagree_MostClass',
+                             'IdentityConvo_MostClass',
+                             'ComfortIdentity_MostClass',
+                             'HonestThought_MostClass',
+                             'FeelAccept_MostClass',
+                             'HelpPersonal_MostClassmate',
+                             'HelpPersonal_MostTeach')]
+
+#NOTE: We dropped all four "How much do you feel like the following people care about you?" 
+#items (i.e., Crew Leader, Crew Students, Most Classroom Students, and Most Classroom Teachers)
+#due to results from Cronbach's alpha, item-total correlations, and correlation matrix
+#of all items described above. Spreadsheet of correlation matrix linked here:
+#https://docs.google.com/spreadsheets/d/1s4ED_wcb6vGUt2v4btesDKJvhlA-nvhn-80cKdsTQc4/edit?usp=sharing
+
+# **********************KMO Test********************************************
+
+# Kaiser-Meyer-Olkin (KMO) tests examines the proportion of variance in the variables that might be common
+# variance (i.e., shared across factors) as opposed to unique variance (specific to each item).
+# This is used because factor analysis relies on the assumption that the observed items are
+# related to each other. Thus, if the variables are not highly correlated the results
+# of factor analysis may not be meaningful. 
+
+# KMO Value Interpretation: KMO>0.9: Excellent; 0.8<KMO<0.9: Good; 0.7<KMO<0.8: Average
+# 0.6<KMO<0.7: Mediocre; KMO<0.6:Poor
+
+library(psych)
+
+psych::KMO(New_Crew|> 
+               mutate_if(is.factor,as.numeric))
+#overall KMO is 0.87, which is good
+
+psych::KMO(OneClass|> 
+             mutate_if(is.factor,as.numeric))
+#overall KMO is 0.88, which is good
+
+psych::KMO(New_MostClass|> 
+             mutate_if(is.factor,as.numeric))
+#overall KMO is 0.85, which is good
+
+psych::KMO(School|> 
+             mutate_if(is.factor,as.numeric))
+#overall KMO is 0.81, which is good
+
+# **********************Bartlett's test for sphericity**************************
+
+#Bartlett's Test for Sphericity is another test to determine if our data
+#is structured in such a way that we can conduct a factor analysis. While the KMO
+#test assesses the adequacy of correlations between variables, Bartlett's test 
+#specifically evaluates the null hypothesis that the correlation matrix is an 
+#identity matrix (which would mean that all variables are uncorrelated with each other).
+
+#Bartlett's Interpretation: Significant Bartlett's Test (p-value<0.05) indicates that
+#the correlation matrix is not an identity matrix, and factor analysis can be used because variables
+# are sufficiently correlated. Conversely, if the test is insignificant (p-value>0.05), 
+#then the variables are essentially uncorrelated, and factor analysis is not an
+#appropriate test to use. 
+
+#to run this test you want to use your whole dataset 
+psych::cortest.bartlett(New_Crew|> 
+                          mutate_if(is.factor,as.numeric))
+#Significant--can proceed
+
+psych::cortest.bartlett(OneClass|> 
+             mutate_if(is.factor,as.numeric))
+#Significant--can proceed
+
+psych::cortest.bartlett(New_MostClass|> 
+             mutate_if(is.factor,as.numeric))
+#Significant--can proceed
+
+psych::cortest.bartlett(School|> 
+             mutate_if(is.factor,as.numeric))
+#Significant--can proceed
+
+# ******************Determining Number of Factors to Extract********************
+
+#Making all factors numeric
+library(dplyr)
+New_Crew_numeric <- New_Crew %>%
+  mutate_if(~!is.numeric(.), as.numeric)
+OneClass_numeric <- OneClass %>%
+  mutate_if(~!is.numeric(.), as.numeric)
+New_MostClass_numeric <- New_MostClass %>%
+  mutate_if(~!is.numeric(.), as.numeric)
+School_numeric <- School %>%
+  mutate_if(~!is.numeric(.), as.numeric)
+
+#CREW 
+ev_Crew <- eigen(cor(New_Crew_numeric))
+ev_Crew$values
+scree(New_Crew_numeric, pc=FALSE)
+fa.parallel(New_Crew_numeric, fa="fa")
+#Kaiser's Rule (retain factors whose eigenvalues are greater than 1) suggests that
+#2 factors may be best. The scree plot suggests 2 to 4 factors. Parallel analysis 
+# suggests 3 factors. 4-Factor doesn't make sense with 9 items, so only testing 2 and 3. 
+
+#One Class
+ev_OneClass <- eigen(cor(OneClass_numeric))
+ev_OneClass$values
+scree(OneClass_numeric, pc=FALSE)
+fa.parallel(OneClass_numeric, fa="fa")
+#Kaiser's Rule suggests that 2 factors may be best. The scree plot suggests 
+#2 to 4 factors. Parallel analysis suggests 4 factors. Again 4-Factor doesn't
+#make sense with 11 items, so only testing 2 and 3.
+
+#Most Class
+ev_MostClass <- eigen(cor(New_MostClass_numeric))
+ev_MostClass$values
+scree(New_MostClass_numeric, pc=FALSE)
+fa.parallel(New_MostClass_numeric, fa="fa")
+#Kaiser's Rule suggests that 2 factors may be best. The scree plot suggests 
+#2 to 4 factors. Parallel analysis suggests 4 factors. Trying 2, 3, and 4 factor models.
+
+#School
+ev_School<- eigen(cor(School_numeric))
+ev_School$values
+scree(School_numeric, pc=FALSE)
+fa.parallel(School_numeric, fa="fa")
+#Kaiser's Rule suggests that 1 factor may be best. The scree plot suggests 
+#2 to 3 factors. Parallel analysis suggests 3 factors. Trying 2 factor; 3 doesn't make sense with the 7 items.
+
+# ******************Extract (and rotate) factors********************
+
+## *****Crew******
+Nfacs <- 3
+fit_Crew_3 <-factanal(New_Crew_numeric, Nfacs, rotation="promax")
+print (fit_Crew_3, digits=2, sort=TRUE)
+#Factor 3 does not have enough strong loadings, so decreasing number of factors
+
+Nfacs <- 2
+fit_Crew_2 <-factanal(New_Crew_numeric, Nfacs, rotation="promax")
+print (fit_Crew_2, digits=2, sort=TRUE)
+loads <- fit_Crew_2$loadings
+fa.diagram(loads)
+#One of the factor loadings is 0.31 could maybe argue, but this is a tough one
+
+Nfacs <- 1
+fit_Crew_1 <-factanal(New_Crew_numeric, Nfacs, rotation="promax")
+print (fit_Crew_1, digits=2, sort=TRUE)
+
+## *****One Class*****
+Nfacs <- 3
+fit_OneClass_3 <-factanal(OneClass_numeric, Nfacs, rotation="promax")
+print (fit_OneClass_3, digits=2, sort=TRUE)
+#Factor 3 does not have enough strong loadings, so decreasing number of factors
+
+Nfacs <- 2
+fit_OneClass_2 <-factanal(OneClass_numeric, Nfacs, rotation="promax")
+print (fit_OneClass_2, digits=2, sort=TRUE)
+loads <- fit_OneClass_2$loadings
+fa.diagram(loads)
+##Nice 2-factor structure
+
+Nfacs <- 1
+fit_OneClass_1 <-factanal(OneClass_numeric, Nfacs, rotation="promax")
+print (fit_OneClass_1, digits=2, sort=TRUE)
+
+## *****More Class*****
+Nfacs <- 4
+fit_MostClass_4 <-factanal(New_MostClass_numeric, Nfacs, rotation="promax")
+print (fit_MostClass_4, digits=2, sort=TRUE)
+
+Nfacs <- 3
+fit_MostClass_3 <-factanal(New_MostClass_numeric, Nfacs, rotation="promax")
+print (fit_MostClass_3, digits=2, sort=TRUE)
+
+Nfacs <- 2
+fit_MostClass_2 <-factanal(New_MostClass_numeric, Nfacs, rotation="promax")
+print (fit_MostClass_2, digits=2, sort=TRUE)
+
+Nfacs <- 1
+fit_MostClass_1 <-factanal(New_MostClass_numeric, Nfacs, rotation="promax")
+print (fit_MostClass_1, digits=2, sort=TRUE)
+
+## ******School*****
+
+Nfacs <- 2
+fit_School_2 <-factanal(School_numeric, Nfacs, rotation="promax")
+print (fit_School_2, digits=2, sort=TRUE)
+
+Nfacs <- 1
+fit_School_1 <-factanal(School_numeric, Nfacs, rotation="promax")
+print (fit_School_1, digits=2, sort=TRUE)
+
+## ***********Testing Full All Student Survey Items******************
+
+all_stu_variable <- cbind (New_Crew_numeric, OneClass_numeric, New_MostClass_numeric, School_numeric)
+KMO(all_stu_variable)
+#0.92; excellent
+cortest.bartlett(all_stu_variable)
+#significant--can proceed
+
+ev_all_stu_variable<- eigen(cor(all_stu_variable))
+ev_all_stu_variable$values
+scree(all_stu_variable, pc=FALSE)
+fa.parallel(all_stu_variable, fa="fa")
+#Kaiser's Rule suggests that 9 factors may be best. The scree plot suggests 
+#4 to 10 factors. Parallel analysis suggests 10 factors.
+
+#9 different questions 
+Nfacs<-9
+fit_all_9 <- factanal(all_stu_variable, Nfacs, rotation="promax")
+print (fit_all_9, digits=2, cutoff=0.3, sort=TRUE)
+
+#4 different contexts
+Nfacs<-4
+fit_all_4 <- factanal(all_stu_variable, Nfacs, rotation="promax")
+print (fit_all_4, digits=2, cutoff=0.3, sort=TRUE)
+
+#3 different theorized factors
+Nfacs<-3
+fit_all_3 <- factanal(all_stu_variable, Nfacs, rotation="promax")
+print (fit_all_3, digits=2, cutoff=0.3, sort=TRUE)
