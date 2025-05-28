@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 githubURL <- "https://github.com/ELJRussell/CZI/raw/refs/heads/main/MasterSurvey.RData"
 load(url(githubURL))
 
@@ -694,3 +692,157 @@ psych::alpha(`Supporting Themselves and Others`|>
                mutate_if(is.factor,as.numeric))
 #0.93 Cronbach's alpha and item-total correlations are all above 0.3 (0.60-0.75).
 
+# ******************************************************************************
+#### ************************Restructuring Student Survey***********************
+# ******************************************************************************
+
+#NOTE: The EFA will be run by context. So I'm going to take some lines of code to shorten the item names
+#and organize subsets by each unique context. 
+
+#Shortening Names of All Variables
+names(`Ownership of Learning`) <- c("TrackAcad_Crew", 
+                                    "TrackAcad_1Class", 
+                                    "TrackAcad_MostClass", 
+                                    "TrackAcad_School", 
+                                    "Lead_Crew", 
+                                    "Lead_1Class", 
+                                    "Lead_MostClass", 
+                                    "Lead_School", 
+                                    "NeedHelpAcad_1Classmate", 
+                                    "NeedHelpAcad_MostClassmate",
+                                    "NeedHelpAcad_1Teach",
+                                    "NeedHelpAcad_MostTeach",
+                                    "NeedHelpAcad_CrewTeach")
+
+names(`Managing Disagreement and Understanding Identity`) <- c("ResolveDisagree_Crew",
+                                                               "ResolveDisagree_1Class",
+                                                               "ResolveDisagree_MostClass",
+                                                               "ResolveDisagree_School",
+                                                               "IdentityConvo_Crew",
+                                                               "IdentityConvo_1Class",
+                                                               "IdentityConvo_MostClass",
+                                                               "IdentityConvo_School",
+                                                               "ComfortIdentity_Crew",
+                                                               "ComfortIdentity_1Class",
+                                                               "ComfortIdentity_MostClass",
+                                                               "ComfortIdentity_School",
+                                                               "HonestThought_Crew",
+                                                               "HonestThought_1Class",
+                                                               "HonestThought_MostClass",
+                                                               "HonestThought_School")
+
+names(`Supporting Themselves and Others`) <- c("FeelAccept_Crew",
+                                               "FeelAccept_1Class",
+                                               "FeelAccept_MostClass",
+                                               "FeelAccept_School",
+                                               "FeelCared_CrewTeach",
+                                               "FeelCared_CrewStudents",
+                                               "FeelCared_MostClassStudents",
+                                               "FeelCared_MostClassTeachers",
+                                               "HelpPersonal_1Classmate",
+                                               "HelpPersonal_MostClassmate",
+                                               "HelpPersonal_1Teach",
+                                               "HelpPersonal_MostTeach",
+                                               "HelpPersonal_CrewTeach")
+
+#Combining all items into one dataframe
+fullstudent<-cbind(`Ownership of Learning`,`Managing Disagreement and Understanding Identity`,`Supporting Themselves and Others`)
+
+#Breaking up items by context
+#NOTE: There are a few that don't quite fit, which is noted after each new dataframe.
+#This might have some influence over how the variable hang together, so running correlation info next.
+
+Crew <- fullstudent[, c('TrackAcad_Crew', 
+                        'Lead_Crew', 
+                        'NeedHelpAcad_CrewTeach', 
+                        'ResolveDisagree_Crew', 
+                        'IdentityConvo_Crew', 
+                        'ComfortIdentity_Crew', 
+                        'HonestThought_Crew', 
+                        'FeelAccept_Crew', 
+                        'FeelCared_CrewTeach',
+                        'FeelCared_CrewStudents',
+                        'HelpPersonal_CrewTeach')]
+#Notice there are a few items that are crew teacher or crew students instead of Crew
+
+
+OneClass <- fullstudent[, c('TrackAcad_1Class',
+                            'Lead_1Class',
+                            'NeedHelpAcad_1Classmate',
+                            'NeedHelpAcad_1Teach',
+                            'ResolveDisagree_1Class',
+                            'IdentityConvo_1Class',
+                            'ComfortIdentity_1Class',
+                            'HonestThought_1Class',
+                            'FeelAccept_1Class',
+                            'HelpPersonal_1Classmate',
+                            'HelpPersonal_1Teach')]
+#Notice there are a few items that are 1 teacher or 1 classmates as well as 1 class
+
+MostClass <- fullstudent[, c('TrackAcad_MostClass',
+                             'Lead_MostClass',
+                             'NeedHelpAcad_MostClassmate',
+                             'NeedHelpAcad_MostTeach',
+                             'ResolveDisagree_MostClass',
+                             'IdentityConvo_MostClass',
+                             'ComfortIdentity_MostClass',
+                             'HonestThought_MostClass',
+                             'FeelAccept_MostClass',
+                             'FeelCared_MostClassStudents',
+                             'FeelCared_MostClassTeachers',
+                             'HelpPersonal_MostClassmate',
+                             'HelpPersonal_MostTeach')]
+#Notice there are a few items that are most classmates and most teachers as well as most classes
+
+School <- fullstudent [, c('TrackAcad_School',
+                           'Lead_School',
+                           'ResolveDisagree_School',
+                           'IdentityConvo_School',
+                           'ComfortIdentity_School',
+                           'HonestThought_School',
+                           'FeelAccept_School')]
+
+#### *********************Correlation Matrix****************************
+
+cor_data_student <- cbind(Crew, OneClass, MostClass, School)
+
+cor_data_student<- cor(cor_data_student |> 
+           na.omit() |> 
+           mutate_if(is.factor,as.numeric))
+
+cor_data_student_rounded <- round(cor_data_student,2)
+
+cor_table_student <- cor_data_student_rounded %>%
+  as.data.frame() %>%
+  rownames_to_column("Items") %>%
+  kable("html", caption = "Inter-Item Correlation Matrix") %>%
+  kable_styling(full_width = F, position = "center", font_size = 11) %>%
+  column_spec(1, bold = TRUE)
+
+cor_table_student #builds correlation matrix 
+
+#### ************Cronbach's Alpha and Item-total correlations****************
+
+psych::alpha(Crew |> 
+               mutate_if(is.factor,as.numeric))
+#0.66 Cronbach's alpha and item-total correlations show most items are above 0.3. 
+# Exception is FeelCared_CrewTeach= -0.38 and FeelCared_CrewStudents= -0.23 
+# If we drop these two items Cronbach's alpha increases to 0.82. 
+
+psych::alpha(OneClass |> 
+               mutate_if(is.factor,as.numeric))
+#0.85 Cronbach's alpha and item-total correlations are all above 0.3. (r.drop= 0.41-0.61)
+
+psych::alpha(MostClass |> 
+               mutate_if(is.factor,as.numeric))
+#0.75 Cronbach's alpha and item-total correlations show most items are above 0.3.
+# Exception is FeelCared_MostClassStudents= -0.25 and FeelCared_MostClassTeachers= -0.27
+# If we drop these two items Cronbach's alpha increases to 0.85. 
+
+psych::alpha(School|> 
+               mutate_if(is.factor,as.numeric))
+#0.76 Cronbach's alpha and item-total correlations are all above 0.3. (r.drop= 0.37-0.56)
+
+# ******************************************************************************
+#### ******************************EFA Student Survey***************************
+# ******************************************************************************
