@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 SurveyDownload.R
+SurveyDownload2.R
+MasterFile.R
+Walkthroughdownload.R

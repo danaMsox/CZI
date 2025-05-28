@@ -119,6 +119,10 @@ M<- cor(staffsurveysfactored |>
           na.omit() |> 
           select(-rowid) |> 
           mutate_if(is.factor,as.numeric))
+
+library(corrplot)
+
+corrplot(M, method="number")
 psych::alpha(`Sense of Belonging` |> 
                mutate_if(is.factor,as.numeric))
 #raw alpha .91
