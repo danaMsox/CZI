@@ -1,4 +1,4 @@
-githubURL <- "https://github.com/ELJRussell/CZI/raw/refs/heads/main/MasterSurvey.RData"
+githubURL <- "https://github.com/ELJRussell/CZI/raw/refs/heads/main/MasterData.RData"
 load(url(githubURL))
 
 library(tidyverse)
@@ -473,22 +473,27 @@ summary(fit3, fit.measure=TRUE, standardized=TRUE)
 ############################################################################
 #########################   Student Survey   ###############################
 ############################################################################
-studentsurveys <- bind_rows(studentsurveyFairdale, studentsurveyRenaissance) |> 
-  select(-rowid) |> 
-  rowid_to_column()
+
+boy_studentsurveys <- subset(studentsurvey, Time == "BOY")
+eoy_studentsurveys <- subset(studentsurvey, Time == "EOY")
+#creating dataframes with just beginning of year and end of year data in them
+
+##########################
+#####Beginning of Year####
+##########################
 
 #constructs of student survey
-`Ownership of Learning`<- studentsurveys |> 
+`Ownership of Learning`<- boy_studentsurveys |> 
   select(starts_with("How often do you") |
            starts_with("When you need help with an academic"))
 
-`Managing Disagreement and Understanding Identity`<- studentsurveys |> 
+`Managing Disagreement and Understanding Identity`<- boy_studentsurveys |> 
   select(starts_with("When there are disagreements") |
            starts_with("How often are important")|
            starts_with("How comfortable")|
            starts_with("How honest"))
 
-`Supporting Themselves and Others` <- studentsurveys |> 
+`Supporting Themselves and Others` <- boy_studentsurveys |> 
   select(starts_with("How much do you feel") |
            starts_with("When you need help with a personal"))
 
@@ -508,7 +513,7 @@ ggplot(df_long_OwnLearning, aes(x = Response, fill = Variable)) +
   labs(title = "Distribution of Categorical Responses",
        x = "Response", y = "Count") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#Kind of all over the place. Some evidence of right skew, left skew (one item), normal distribution.
+#Kind of all over the place. Some evidence of right skew, left skew, normal distribution.
 
 #Managing Disagreement and Understanding Identity
 df_long_ManageDisagree <- `Managing Disagreement and Understanding Identity`|>
@@ -522,7 +527,7 @@ ggplot(df_long_ManageDisagree, aes(x = Response, fill = Variable)) +
   labs(title = "Distribution of Categorical Responses",
        x = "Response", y = "Count") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#Mostly trending towards normal.
+#Some evidence of right skew, left skew, normal distribution.
 
 #Supporting Themselves and Others
 df_long_SupportThemself <- `Supporting Themselves and Others` |>
@@ -536,9 +541,10 @@ ggplot(df_long_SupportThemself, aes(x = Response, fill = Variable)) +
   labs(title = "Distribution of Categorical Responses",
        x = "Response", y = "Count") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#Mostly trending towards normal. 
+#Some evidence of right skew, left skew, normal distribution.
 
-#### **TAKEAWAYS: A majority of the items are trending towards normal. 
+#### **TAKEAWAYS: We are likely going to want to treat the data like it's not 
+# normally distributed and run analyses accordingly. 
 
 ##### ********************Mean/Average Item Response********************
 
@@ -680,7 +686,7 @@ cor_table #builds correlation matrix
 #Ownership of Learning
 psych::alpha(`Ownership of Learning` |> 
                mutate_if(is.factor,as.numeric))
-#0.86 Cronbach's alpha and item-total correlations are all above 0.3. (r.drop=0.39-0.59) 
+#0.86 Cronbach's alpha and item-total correlations are all above 0.3. (r.drop=0.38-0.60) 
 
 #Managing Disagreement and Understanding Identity
 psych::alpha(`Managing Disagreement and Understanding Identity` |> 
