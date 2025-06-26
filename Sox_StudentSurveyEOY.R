@@ -7,7 +7,14 @@ library(tidyverse)
 
 eoy_studentsurveys <- subset(studentsurvey, Time == "EOY")
 #creating dataframe with just end of year data in them
+table(eoy_studentsurveys$Identifier)
+#double checking that this is only pilot schools
 
+boy_studentsurveys <- subset(studentsurvey, Time == "BOY")
+table(boy_studentsurveys$Identifier)
+#there are 87 observations that are not pilot school; dropping them for comparison between eoy/boy
+boy_studentsurveys <- boy_studentsurveys[boy_studentsurveys$Identifier!="O1", ]
+table(boy_studentsurveys$Identifier) #double checking all 87 observations are dropped
 ##########################
 ########End of Year#######
 ##########################
@@ -228,6 +235,18 @@ ggplot(df_long_HelpPersonal, aes(x = Response, fill = Variable)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #Trending toward normal-ish
 
+df_long_HelpPersonal<- `Help Personal BOY`|>
+  pivot_longer(cols=everything(), names_to="Variable", values_to= "Response") |>
+  mutate(Response=as.factor(Response)) |>
+  filter(!is.na(Response))
+ggplot(df_long_HelpPersonal, aes(x = Response, fill = Variable)) +
+  geom_bar(stat = "count", position = "dodge", show.legend = FALSE) +
+  facet_wrap(~ Variable, scales = "free_x") +
+  theme_minimal() +
+  labs(title = "Distribution of Categorical Responses",
+       x = "Response", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 #### **TAKEAWAYS: Some 'constructs' are normal and trending towards normal
 # but others are not. May want to assume non-normal distribution for analyses to be safe. 
 
@@ -258,6 +277,8 @@ cor_table #builds correlation matrix
 
 
 #### ************Cronbach's Alpha and Item-total correlations****************
+
+###### ****Survey by Items****
 
 #Track Academics
 psych::alpha(`Track Academics` |> 
@@ -435,4 +456,162 @@ summary(fit2, standardized = TRUE)
 #Option 3. Constrain our covariances to be values <1 or add penalty via regularized CFA (regsem package), but this method is not recommended
 
 #Wonder: With these results, I am wondering if we want to continue trying to fit a model to all the items. It seems like the similar questions and similar locations are up against each other and
-#causing some correlation and other issues when we try to fit everything together. 
+#causing some correlation and other issues when we try to fit everything together.
+
+############################################################################
+#########################   EOY & BOY Descriptive Stats#####################
+############################################################################
+
+###############################
+#### EOY Descriptive Stats ####
+###############################
+
+library(dplyr)
+library(purrr)
+library(tidyr)
+
+# Put your data frames in a named list
+df_list_eoy <- list(
+  `Track Academics` = `Track Academics`,
+  Lead = Lead,
+  `Need Help Academics` = `Need Help Academics`,
+  `Resolve Disagreements` = `Resolve Disagreements`,
+  `Identity Conversations` = `Identity Conversations`,
+  `Comfort Identity` = `Comfort Identity`,
+  `Feel Accepted` = `Feel Accepted`,
+  `Honest Thought` = `Honest Thought`,
+  `Feel Cared` = `Feel Cared`,
+  `Help Personal` = `Help Personal`
+)
+
+summary_tidy_eoy <- map2_dfr(df_list_eoy, names(df_list_eoy), function(df, nm) {
+  df %>%
+    mutate(across(everything(), as.numeric)) %>%
+    summarise(across(everything(), list(mean = ~mean(.x, na.rm=TRUE),
+                                        sd = ~sd(.x, na.rm=TRUE)))) %>%
+    mutate(dataset = nm) %>%
+    pivot_longer(
+      cols = -dataset,
+      names_to = c("variable", "stat"),
+      names_sep = "_(?=[^_]+$)",  # split at the last underscore
+      values_drop_na = TRUE
+    )
+})
+
+View(summary_tidy_eoy)
+
+#########################################
+## BOY Descriptive Statistics###########
+#########################################
+
+
+#constructs of student survey
+#COPIED FROM ABOVE
+#Must run this code if you are not running through entire file
+#boy_studentsurveys <- subset(studentsurvey, Time == "BOY")
+#table(boy_studentsurveys$Identifier)
+#there are 87 observations that are not pilot school; dropping them for comparison between eoy/boy
+#boy_studentsurveys <- boy_studentsurveys[boy_studentsurveys$Identifier!="O1", ]
+#table(boy_studentsurveys$Identifier) #double checking all 87 observations are dropped
+
+`Track Academics BOY`<- boy_studentsurveys |> 
+  select(starts_with("How often do you track"))
+names (`Track Academics`) <- c("TrackAcad_Crew", 
+                               "TrackAcad_1Class", 
+                               "TrackAcad_MostClass", 
+                               "TrackAcad_School")
+
+`Lead BOY` <- boy_studentsurveys |> 
+  select(starts_with("How often do you get to lead"))
+names (`Lead`) <- c("Lead_Crew", 
+                    "Lead_1Class", 
+                    "Lead_MostClass", 
+                    "Lead_School")
+
+`Need Help Academics BOY` <- boy_studentsurveys |> 
+  select(starts_with("When you need help with an academic"))
+names (`Need Help Academics`) <- c("NeedHelpAcad_1Classmate", 
+                                   "NeedHelpAcad_MostClassmate",
+                                   "NeedHelpAcad_1Teach",
+                                   "NeedHelpAcad_MostTeach",
+                                   "NeedHelpAcad_CrewTeach")
+
+`Resolve Disagreements BOY` <- boy_studentsurveys |> 
+  select(starts_with("When there are disagreements"))
+names (`Resolve Disagreements`) <- c("ResolveDisagree_Crew",
+                                     "ResolveDisagree_1Class",
+                                     "ResolveDisagree_MostClass",
+                                     "ResolveDisagree_School")
+
+`Identity Conversations BOY` <- boy_studentsurveys |> 
+  select(starts_with("How often are important conversations"))
+names (`Identity Conversations`) <- c("IdentityConvo_Crew",
+                                      "IdentityConvo_1Class",
+                                      "IdentityConvo_MostClass",
+                                      "IdentityConvo_School")
+
+`Comfort Identity BOY` <- boy_studentsurveys |> 
+  select(starts_with("How comfortable are you sharing"))
+names (`Comfort Identity`) <- c("ComfortIdentity_Crew",
+                                "ComfortIdentity_1Class",
+                                "ComfortIdentity_MostClass",
+                                "ComfortIdentity_School")
+
+`Feel Accepted BOY` <- boy_studentsurveys |> 
+  select(starts_with("How much do you feel like you are accepted"))
+names (`Feel Accepted`) <- c("FeelAccept_Crew",
+                             "FeelAccept_1Class",
+                             "FeelAccept_MostClass",
+                             "FeelAccept_School")
+
+`Honest Thought BOY` <- boy_studentsurveys |> 
+  select(starts_with("How honest can you be"))
+names (`Honest Thought`) <- c("HonestThought_Crew",
+                              "HonestThought_1Class",
+                              "HonestThought_MostClass",
+                              "HonestThought_School")
+
+`Feel Cared BOY` <- boy_studentsurveys |> 
+  select(starts_with("How much do you feel like the following people"))
+names (`Feel Cared`) <- c("FeelCared_CrewTeach",
+                          "FeelCared_CrewStudents",
+                          "FeelCared_MostClassStudents",
+                          "FeelCared_MostClassTeachers")
+
+
+`Help Personal BOY` <- boy_studentsurveys |> 
+  select(starts_with("When you need help with a personal problem"))
+names (`Help Personal`) <- c("HelpPersonal_1Classmate",
+                             "HelpPersonal_MostClassmate",
+                             "HelpPersonal_1Teach",
+                             "HelpPersonal_MostTeach",
+                             "HelpPersonal_CrewTeach")
+
+df_list_boy <- list(
+  `Track Academics BOY` = `Track Academics BOY`,
+  `Lead BOY` = `Lead BOY`,
+  `Need Help Academics BOY` = `Need Help Academics BOY`,
+  `Resolve Disagreements BOY` = `Resolve Disagreements BOY`,
+  `Identity Conversations BOY` = `Identity Conversations BOY`,
+  `Comfort Identity BOY` = `Comfort Identity BOY`,
+  `Feel Accepted BOY` = `Feel Accepted BOY`,
+  `Honest Thought BOY` = `Honest Thought BOY`,
+  `Feel Cared BOY` = `Feel Cared BOY`,
+  `Help Personal BOY` = `Help Personal BOY`
+)
+
+summary_tidy_boy <- map2_dfr(df_list_boy, names(df_list_boy), function(df, nm) {
+  df %>%
+    mutate(across(everything(), as.numeric)) %>%
+    summarise(across(everything(), list(mean = ~mean(.x, na.rm=TRUE),
+                                        sd = ~sd(.x, na.rm=TRUE)))) %>%
+    mutate(dataset = nm) %>%
+    pivot_longer(
+      cols = -dataset,
+      names_to = c("variable", "stat"),
+      names_sep = "_(?=[^_]+$)",  # split at the last underscore
+      values_drop_na = TRUE
+    )
+})
+
+View(summary_tidy_boy)

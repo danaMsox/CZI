@@ -7,6 +7,11 @@ library(tidyverse)
 ############################################################################
 
 eoy_staffsurveys <- subset(staff, Time == "EOY")
+table(eoy_staffsurveys$Identifier)
+#double checking that this is only pilot schools
+eoy_staffsurveys <- eoy_staffsurveys[eoy_staffsurveys$Identifier!="O4", ]
+table(eoy_staffsurveys$Identifier) 
+#removes and double checks any observations that are not from the two pilot schools. 
 
 eoy_staffsurveysfactored <- eoy_staffsurveys |> 
   mutate(`How well do your colleagues at school understand you as a person?`=
