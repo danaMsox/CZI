@@ -138,7 +138,6 @@ colnames(pilot_staff_factored)<-c("name", "Time", "Identifier", "Academicindegre
 pilot_staff_numeric <- pilot_staff_factored %>%
   mutate(across(c("b1", "b2", "b3", "b4", "e1", "e2", "e3", "e4", "s1", "s2", "s3", "s4", "s5", "c1", "c2", "c3", "c4"), as.numeric))
 
-
 ###Checking fit of model with both EOY and BOY data
 library(lavaan)
 cfa_model <-"
@@ -162,6 +161,15 @@ summary(fit, fit.measure=TRUE, standardized=TRUE)
 
 ####SEM Model that controls for school
 
+#Dummy coding school
+library(dplyr)
+
+pilot_staff_numeric <- pilot_staff_numeric %>%
+  mutate(P1_dummy = ifelse(Identifier == "P1", 1, 0))
+
+pilot_staff_numeric <- pilot_staff_numeric %>%
+  mutate(P2_dummy = ifelse(Identifier == "P2", 1, 0))
+
 model_control <-"
 #Latent factors
 F1_educate =~ e1 + e2 + e3 + e4 
@@ -175,10 +183,10 @@ F4_belonging =~ b1 + b2 + b3 + b4
 b1~~b2
 
 # regress latent factors on school covariate
-F1_educate ~ Identifier
-F2_climate ~ Identifier
-F3_SEL ~ Identifier
-F4_belonging ~ Identifier
+F1_educate ~ P1_dummy + P2_dummy 
+F2_climate ~ P1_dummy + P2_dummy
+F3_SEL ~ P1_dummy + P2_dummy
+F4_belonging ~ P1_dummy + P2_dummy
 "
 
 #SEM model that compares across time
@@ -191,7 +199,8 @@ fit_time <- sem(model_control,
 
 # View fit summary with fit measures and standardized estimates
 summary(fit_time, fit.measures = TRUE, standardized = TRUE)
-#Good fit statistics
+#Good fit statistics; CFI=0.926, TLI=0.908 acceptable because both are above 0.90; 
+#RMSEA=0.078 (acceptable; below 0.08); SRMR=0.068 (acceptable; below 0.08)
 
 # Test for Measurement Invariance [to compare factor means over time]
 # 1. Configural Invariance (no constraints)
@@ -210,8 +219,8 @@ anova(fit_config, fit_metric, fit_scalar)
 #Scalar=BORDERLINE!! Scalar invariance is marginal, so we need to be cautious interpreting latent mean differences over time
 #B/c of this I am going to check modification indices to see which intercepts are non-invariant, so I can free those while keeping other constrained. 
 lavTestScore(fit_scalar)
-#checked for p-values <.05 found two (.p53 & .p57). Checking to see which items these constraints correspond to
-parameterEstimates(fit_scalar)[c(53, 57), ]
+#checked for p-values <.05 found two (.p59 & .p63). Checking to see which items these constraints correspond to
+parameterEstimates(fit_scalar)[c(59, 63), ]
 #They correspond to c2 and s2, so adding them to the model
 
 fit_partial_scalar <- cfa(
@@ -237,13 +246,20 @@ parameterEstimates(fit_partial_scalar, standardized = TRUE) %>%
 #SUMMARY OF RESULTS: 
 
 #Model and factors (Partial Scalar Model):
-#Model has good fit based on indices; CFI=0.934; TLI=0.925; RMSEA=0.073; SRMR=0.072
-#All factor loadings are positive and significant ranging from moderate (>0.5) to strong (>0.7)
+#Model has good fit based on indices; CFI=0.929; TLI=0.918; RMSEA=0.073; SRMR=0.071
+#All factor loadings are positive and significant ranging from moderate (>0.6) to high in size.
 
 #School control:
-#For each factor regressed on school none of the regression coefficients are significant. 
-#This suggests that school does not significantly predict the latent constructs. 
-#[School doesn't strongly influence on the teachers' scores in these factors of interest.]
+#Pilot school 1 is positively associated with school climate and belonging, especially
+#at the BOY. However, pilot school 2 does not significantly predict any of our constructs. 
+
+#Pilot school 1 significantly predicts school climate at both the BOY (p=0.001) and EOY (0.005). 
+# This means, on average, staff in pilot school 1 (vs. pilot school 2) have a 
+# 0.345 point higher latent score on perceptions of school climate at BOY and 0.267 point higher at EOY.
+
+#Pilot school 1 significantly predicts sense of belonging at BOY (p=0.020).
+## This means, on average, staff in pilot school 1 (vs. pilot school 2) have a 
+# 0.486 point higher latent score on perceptions of sense of belonging at BOY.
 
 #Latent Mean Comparison:
 #There is no evidence of significant change in the latent factor means across 
